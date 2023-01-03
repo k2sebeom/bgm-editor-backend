@@ -10,7 +10,7 @@ import asyncio
 async def sync(client, data):
     await client.connect()
     for song in data:
-        await client.song.create(data)
+        await client.song.create(song)
     await client.disconnect()
     print("Sync complete! It is okay to close")
 
