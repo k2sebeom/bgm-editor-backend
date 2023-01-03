@@ -4,11 +4,14 @@ from os import path
 import json
 
 from prisma import Prisma
+import asyncio
 
 
-async def sync(data):
-    print(data)
-    await client.song.create_many(data)
+async def sync(client, data):
+    await client.connect()
+    for song in data:
+        await client.song.create(data)
+    await client.disconnect()
     print("Sync complete! It is okay to close")
 
 
@@ -29,9 +32,10 @@ if __name__ == "__main__":
     data = []
     add = data.append
     for fpath in audio_files:
-        title = path.splitext(fpath)[0]
+        title = path.splitext(path.basename(fpath))[0]
         song = index[title]
         song['url'] = f'/youtube/{title}.mp3'
         add(song)
-    sync(data)
-    input("")
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(sync(client, data))
+    
