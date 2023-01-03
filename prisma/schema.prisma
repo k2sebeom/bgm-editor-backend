@@ -1,0 +1,19 @@
+generator client {
+    provider = "prisma-client-py"
+    interface = "asyncio"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.db"
+}
+
+
+model Song {
+    id  Int @id @default(autoincrement())
+    title String
+    artist String
+    mood String
+    genre String
+    url String
+}
