@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip
+from moviepy.audio.fx.audio_fadeout import audio_fadeout
 from uuid import uuid1
 from os import path, remove
 
@@ -67,9 +68,13 @@ async def process_video(background_tasks: BackgroundTasks, starts: List[str] = F
     
     final_clips = [vclip.audio]
     for s, e, aclip in zip(starts, ends, aclips):
-        s, e = float(s), float(e)
-        final_clips.append(aclip.subclip(0, e - s).set_start(s))
+        r = [float(s), float(e)]
+        r.sort()
+        s, e = r
+        final_clips.append(audio_fadeout(aclip.subclip(0, e - s).set_start(s), 1))
     final_aclip = CompositeAudioClip(final_clips)
     final_vclip = vclip.set_audio(final_aclip)
+    temp_path = f'{uuid1()}-{video.filename}'
+    background_tasks.add_task(remove, temp_path)
     final_vclip.write_videofile(temp_path, audio_codec='aac', audio_bitrate='192k')
     return FileResponse(path=temp_path)
