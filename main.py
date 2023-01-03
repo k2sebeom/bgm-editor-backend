@@ -1,6 +1,7 @@
 from src.db import client
+from typing import List
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -41,3 +42,7 @@ async def get_songs(mood: str, genre: str, limit: int = 1):
         "mood": mood
     })
     return { "data": songs }
+
+@app.post("/api/process/")
+async def process_video(starts: List[str] = Form(), ends: List[str] = Form(), ids: List[str] = Form(), video: UploadFile = File()):
+    return { "data" : video.filename, }
