@@ -15,4 +15,9 @@ async def shutdown():
 
 @app.get("/")
 def read_root():
-    return {"version": "1.0.0"}
+    return {"version": "0.1.0"}
+
+@app.get("/song")
+def get_songs():
+    return {}
+
