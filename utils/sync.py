@@ -33,6 +33,8 @@ if __name__ == "__main__":
     add = data.append
     for fpath in audio_files:
         title = path.splitext(path.basename(fpath))[0]
+        if title not in index:
+            continue
         song = index[title]
         song['url'] = f'/youtube/{title}.mp3'
         add(song)
