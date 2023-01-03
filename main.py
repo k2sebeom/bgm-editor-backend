@@ -1,9 +1,16 @@
 from src.db import client
 from typing import List
 
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip
+from uuid import uuid1
+from os import path, remove
+
+
+SRC_DIR = '../youtube-audio-library-crawler/dst'
 
 app = FastAPI()
 app.add_middleware(
@@ -43,6 +50,26 @@ async def get_songs(mood: str, genre: str, limit: int = 1):
     })
     return { "data": songs }
 
+
 @app.post("/api/process/")
-async def process_video(starts: List[str] = Form(), ends: List[str] = Form(), ids: List[str] = Form(), video: UploadFile = File()):
-    return { "data" : video.filename, }
+async def process_video(background_tasks: BackgroundTasks, starts: List[str] = Form(), ends: List[str] = Form(), ids: List[str] = Form(), video: UploadFile = File()):
+    temp_path = f'{uuid1()}-{video.filename}'
+    background_tasks.add_task(remove, temp_path)
+    with open(temp_path, 'wb') as f:
+        f.write(await video.read())
+
+    vclip = VideoFileClip(temp_path)
+
+    aclips = []
+    for clip_id in ids:
+        clip = await client.song.find_unique(where={"id": int(clip_id)})
+        aclips.append(AudioFileClip(path.join(SRC_DIR, path.basename(clip.url))))
+    
+    final_clips = [vclip.audio]
+    for s, e, aclip in zip(starts, ends, aclips):
+        s, e = float(s), float(e)
+        final_clips.append(aclip.subclip(0, e - s).set_start(s))
+    final_aclip = CompositeAudioClip(final_clips)
+    final_vclip = vclip.set_audio(final_aclip)
+    final_vclip.write_videofile(temp_path, audio_codec='aac', audio_bitrate='192k')
+    return FileResponse(path=temp_path)

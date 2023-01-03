@@ -2,3 +2,4 @@ uvicorn
 fastapi
 prisma
 python-multipart
+moviepy
